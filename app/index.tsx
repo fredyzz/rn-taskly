@@ -1,7 +1,14 @@
-import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  LayoutAnimation,
+} from "react-native";
 import "react-native-get-random-values";
 import { v4 as uuid } from "uuid";
-
+import * as Haptics from "expo-haptics";
 import { theme } from "../theme";
 import { ShoppingListItem } from "../components/ShoppingListItem";
 import { useEffect, useState } from "react";
@@ -17,7 +24,10 @@ export default function App() {
   useEffect(() => {
     const getInitialData = async () => {
       const data = await getFromStorage(STORAGE_KEY);
-      if (data) setShoppingList(data);
+      if (data) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setShoppingList(data);
+      }
     };
 
     getInitialData();
@@ -37,6 +47,7 @@ export default function App() {
 
       setShoppingList(updatedShoppingList);
       saveToStorage(STORAGE_KEY, updatedShoppingList);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setNewItem("");
     }
   };
@@ -47,12 +58,19 @@ export default function App() {
     );
 
     setShoppingList(updatedShoppingList);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     saveToStorage(STORAGE_KEY, updatedShoppingList);
   };
 
   const handleOnToggleComplete = (itemId: string) => {
     const updatedShoppingList = shoppingList.map((item) => {
       if (item.id === itemId) {
+        if (item.completedAtTimestamp) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         return {
           ...item,
           lastUpdatedTimestamp: Date.now(),
@@ -66,6 +84,7 @@ export default function App() {
     });
 
     setShoppingList(updatedShoppingList);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     saveToStorage(STORAGE_KEY, updatedShoppingList);
   };
 
