@@ -5,12 +5,8 @@ import { v4 as uuid } from "uuid";
 import { theme } from "../theme";
 import { ShoppingListItem } from "../components/ShoppingListItem";
 import { useState } from "react";
-
-type ShoppingListItemType = {
-  id: string;
-  name: string;
-  complete: boolean;
-};
+import { ShoppingListItemType } from "../types/shoppingListItem";
+import { orderShoppingList } from "../utils/orderShoppintList";
 
 export default function App() {
   const [newItem, setNewItem] = useState("");
@@ -20,15 +16,45 @@ export default function App() {
 
   const handleOnSubmit = () => {
     if (Boolean(newItem)) {
-      const itemToAdd = { id: uuid(), name: newItem, complete: false };
+      const itemToAdd = {
+        id: uuid(),
+        name: newItem,
+        lastUpdatedTimestamp: Date.now(),
+      };
 
       setShoppingList((prev) => [...prev, itemToAdd]);
     }
   };
 
+  const handleOnDelete = (itemId: string) => {
+    const updatedShoppingList = shoppingList.filter(
+      (item) => item.id !== itemId
+    );
+
+    setShoppingList(updatedShoppingList);
+  };
+
+  const handleOnToggleComplete = (itemId: string) => {
+    const updatedShoppingList = shoppingList.map((item) => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          lastUpdatedTimestamp: Date.now(),
+          completedAtTimestamp: item?.completedAtTimestamp
+            ? undefined
+            : Date.now(),
+        };
+      }
+
+      return item;
+    });
+
+    setShoppingList(updatedShoppingList);
+  };
+
   return (
     <FlatList
-      data={shoppingList}
+      data={orderShoppingList(shoppingList)}
       stickyHeaderIndices={[0]}
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -49,7 +75,12 @@ export default function App() {
       }
       renderItem={({ item }) => {
         return (
-          <ShoppingListItem name={item.name} isCompleted={item.complete} />
+          <ShoppingListItem
+            name={item.name}
+            isCompleted={Boolean(item.completedAtTimestamp)}
+            onDelete={() => handleOnDelete(item.id)}
+            onToggleComplete={() => handleOnToggleComplete(item.id)}
+          />
         );
       }}
     />
@@ -60,7 +91,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colorWhite,
-    padding: 12,
+    paddingVertical: 12,
   },
   contentContainer: {
     paddingBottom: 24,
