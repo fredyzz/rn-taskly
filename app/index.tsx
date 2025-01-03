@@ -4,13 +4,24 @@ import { v4 as uuid } from "uuid";
 
 import { theme } from "../theme";
 import { ShoppingListItem } from "../components/ShoppingListItem";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShoppingListItemType } from "../types/shoppingListItem";
-import { orderShoppingList } from "../utils/orderShoppintList";
+import { orderShoppingList } from "../utils/orderShoppingList";
+import { getFromStorage, saveToStorage } from "../utils/storage";
+import { STORAGE_KEY } from "../consts/storage";
 
 export default function App() {
   const [newItem, setNewItem] = useState("");
   const [shoppingList, setShoppingList] = useState<ShoppingListItemType[]>([]);
+
+  useEffect(() => {
+    const getInitialData = async () => {
+      const data = await getFromStorage(STORAGE_KEY);
+      if (data) setShoppingList(data);
+    };
+
+    getInitialData();
+  }, []);
 
   const handleOnChangeText = (val: string) => setNewItem(val);
 
@@ -22,7 +33,11 @@ export default function App() {
         lastUpdatedTimestamp: Date.now(),
       };
 
-      setShoppingList((prev) => [...prev, itemToAdd]);
+      const updatedShoppingList = [...shoppingList, itemToAdd];
+
+      setShoppingList(updatedShoppingList);
+      saveToStorage(STORAGE_KEY, updatedShoppingList);
+      setNewItem("");
     }
   };
 
@@ -32,6 +47,7 @@ export default function App() {
     );
 
     setShoppingList(updatedShoppingList);
+    saveToStorage(STORAGE_KEY, updatedShoppingList);
   };
 
   const handleOnToggleComplete = (itemId: string) => {
@@ -50,6 +66,7 @@ export default function App() {
     });
 
     setShoppingList(updatedShoppingList);
+    saveToStorage(STORAGE_KEY, updatedShoppingList);
   };
 
   return (
